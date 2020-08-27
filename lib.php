@@ -94,6 +94,7 @@ function collaborate_add_instance(stdClass $collaborate, mod_collaborate_mod_for
     $collaborate->timecreated = time();
     $collaborate->timestart = $data->timestart;
     $collaborate->timeend = $data->timeend;
+    $collaborate->intro = local::entitydecode($collaborate->intro);
     $collaborate->id = $DB->insert_record('collaborate', $collaborate);
 
     // Create session link records.
@@ -120,6 +121,7 @@ function collaborate_update_instance(stdClass $collaborate, mod_collaborate_mod_
     $collaborate->timecreated = time();
     $collaborate->timestart = $data->timestart;
     $collaborate->timeend = $data->timeend;
+    $collaborate->intro = local::entitydecode($collaborate->intro);
     $cansharevideo = isset($collaborate->cansharevideo) && boolval($collaborate->cansharevideo);
     $collaborate->cansharevideo = $cansharevideo ?: 0;
     $canpostmessages = isset($collaborate->canpostmessages) && boolval($collaborate->canpostmessages);
@@ -128,6 +130,8 @@ function collaborate_update_instance(stdClass $collaborate, mod_collaborate_mod_
     $collaborate->canannotatewhiteboard = $canannotatewhiteboard ?: 0;
     $canshareaudio = isset($collaborate->canshareaudio) && boolval($collaborate->canshareaudio);
     $collaborate->canshareaudio = $canshareaudio ?: 0;
+    $candownloadrecordings = isset($collaborate->candownloadrecordings) && boolval($collaborate->candownloadrecordings);
+    $collaborate->candownloadrecordings = $candownloadrecordings ?: 0;
 
     local::prepare_sessionids_for_query($collaborate);
 
@@ -358,6 +362,12 @@ function collaborate_cm_info_view(cm_info $cm) {
  */
 function collaborate_print_recent_mod_activity($activity, $courseid, $detail, $modnames) {
     global $PAGE;
+
+    $disablerecentactivity = get_config('collaborate', 'disablerecentactivity');
+    if (!empty($disablerecentactivity)) {
+        return;
+    }
+
     $renderer = $PAGE->get_renderer('collaborate');
     echo $renderer->recent_activity($activity, $courseid, $detail, $modnames);
 }
@@ -383,6 +393,11 @@ function collaborate_get_recent_mod_activity(&$activities, &$index, $timestart, 
     $reader = reset($readers);
     if (empty($reader)) {
         return; // No log reader found.
+    }
+
+    $disablerecentactivity = get_config('collaborate', 'disablerecentactivity');
+    if (!empty($disablerecentactivity)) {
+        return;
     }
 
     $modinfo = get_fast_modinfo($courseid);
